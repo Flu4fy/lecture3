@@ -1,41 +1,60 @@
 #include <iostream>
 #include <fstream>
-#include <string>
+#include <sstream>
+#include <vector>
 
 int main() {
     std::ifstream inputFile("input.txt"); // имя входного файла с текстовыми вопросами
     std::ofstream outputFile("output.txt"); // имя файла для сохранения вопросов в формате GIFT
 
     if (!inputFile) {
-        std::cout << "ошибка открытия входного файла!" << std::endl;
+        std::cout << "Ошибка открытия входного файла!" << std::endl;
         return 1;
     }
 
     if (!outputFile) {
-        std::cout << "ошибка открытия выходного файла!" << std::endl;
+        std::cout << "Ошибка открытия выходного файла!" << std::endl;
         return 1;
     }
 
     std::string line;
+    int questionNumber = 1;
     while (std::getline(inputFile, line)) {
         if (line.empty()) {
             continue; // пропуск пустых строк
         }
 
-        outputFile << "::" << line << "{" << std::endl; // имя вопроса в формате GIFT
-
-        std::string answer;
-        std::getline(inputFile, answer);
-        if (!answer.empty()) {
-            outputFile << "= " << answer << std::endl; // правильный ответ в формате GIFT
+        // извлечение вопроса
+        std::string question;
+        if (line.find(". ") != std::string::npos) {
+            question = line.substr(line.find(". ") + 2);
         }
 
-        std::string option;
-        while (std::getline(inputFile, option) && !option.empty()) {
-            outputFile << "~ " << option << std::endl; // варианты ответов в формате GIFT
+        // извлечение вариантов ответов
+        std::vector<std::string> answers;
+        while (std::getline(inputFile, line) && !line.empty()) {
+            std::string answer;
+            char prefix = line[0];
+            if (prefix == '+' || prefix == '-') {
+                answer = line.substr(1);
+                answers.push_back(answer);
+            }
         }
 
-        outputFile << "}" << std::endl << std::endl;
+        // запись вопроса и ответов в формате GIFT
+        if (!question.empty() && !answers.empty()) {
+            outputFile << questionNumber << ". " << question << " {" << std::endl;
+            for (const auto& answer : answers) {
+                if (answer[0] == '+') {
+                    outputFile << "=" << answer.substr(1) << std::endl;
+                } else {
+                    outputFile << "~" << answer.substr(1) << std::endl;
+                }
+            }
+            outputFile << "}" << std::endl << std::endl;
+
+            questionNumber++;
+        }
     }
 
     inputFile.close();
